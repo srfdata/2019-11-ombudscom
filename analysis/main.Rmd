@@ -1,0 +1,905 @@
+---
+title: "Ombudscom-Statistiken 2014-2018"
+author: "SRF Data, Timo Grossenbacher (timo.grossenbacher@srf.ch), Angelo Zehr"
+date: "November 2019"
+output:
+  html_document:
+    code_folding: show
+    echo: TRUE
+    warning: FALSE
+    message: FALSE
+    theme: simplex
+    df_print: kable
+    toc: yes
+    toc_depth: 4
+    toc_float: 
+      collapsed: false
+      smooth_scroll: false
+subtitle: Vorprozessierung und Analyse
+---
+
+
+```{r, echo=FALSE}
+# CONFIG
+user_name <- "srfdata"
+project_name <- "2019-11-ombudscom"
+package_date <- "2019-03-01" # date of the CRAN snapshot that
+# the checkpoint package uses
+R_version <- "3.5.3" # R-Version to use
+options(Ncpus = 4) # use 4 cores for parallelized installation of packages
+if (R_version != paste0(version$major, ".", version$minor)){
+  stop("ERROR: specified R version does not match currently used.")
+}
+```
+
+## Vorbemerkungen
+
+Dieses Dokument beschreibt die Vorprozessierung und explorative Analyse des Datensatzes, der Grundlage des auf srf.ch veröffentlichten Artikel [XYZ](https://www.srf.ch/data) ist.
+
+SRF Data legt Wert darauf, dass die Datenvorprozessierung und -Analyse nachvollzogen und überprüft werden kann. SRF Data glaubt an das Prinzip offener Daten, aber auch offener und nachvollziehbarer Methoden. Zum anderen soll es Dritten ermöglicht werden, auf dieser Vorarbeit aufzubauen und damit weitere Auswertungen oder Applikationen zu generieren.  
+
+
+Die Endprodukte des vorliegenden Scripts, neben der vorliegenden explorativen Analyse, sind (Datenbeschreibung siehe unten):
+
+* `reasons_top_four_providers.csv`
+* `cases_per_type.csv`
+* `cases_top_4_with_exit.csv`
+
+### R-Script & Daten
+
+Die Vorprozessierung und Analyse wurde im Statistikprogramm R vorgenommen. Das zugrunde liegende Script sowie die prozessierten Daten können unter [diesem Link](https://srfdata.github.io/`r project_name`/rscript.zip) heruntergeladen werden. Durch Ausführen von `main.Rmd` kann der hier beschriebene Prozess nachvollzogen und der für den Artikel verwendete Datensatz generiert werden. Dabei werden Daten aus dem Ordner `input` eingelesen und Ergebnisse in den Ordner `output` geschrieben. 
+
+SRF Data verwendet das [rddj-template](https://github.com/grssnbchr/rddj-template) von Timo Grossenbacher als Grundlage für seine R-Scripts.  Entstehen bei der Ausführung dieses Scripts Probleme, kann es helfen, die Anleitung von [rddj-template](https://github.com/grssnbchr/rddj-template) zu studieren. 
+
+Debug-Informationen: *This report was generated on `r Sys.time()`. R version: `r paste0(version$major, ".", version$minor)` on `r version$platform`. For this report, CRAN packages as of `r package_date` were used.*
+
+### GitHub
+
+Der Code für die vorliegende Datenprozessierung ist auf [https://github.com/srfdata/`r project_name`](https://github.com/srfdata/`r project_name`) zur freien Verwendung verfügbar. 
+
+
+### Lizenz
+
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons Lizenzvertrag" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Dataset" property="dct:title" rel="dct:type">`r project_name`</span> von <a xmlns:cc="http://creativecommons.org/ns#" href="https://github.com/srfdata/`r project_name`" property="cc:attributionName" rel="cc:attributionURL">SRF Data</a> ist lizenziert unter einer <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Namensnennung - Weitergabe unter gleichen Bedingungen 4.0 International Lizenz</a>.
+
+### Weitere Projekte
+
+Code & Daten von [SRF Data](https://srf.ch/data) sind unter [https://srfdata.github.io](https://srfdata.github.io) verfügbar.
+
+### Haftungsausschluss
+
+Die veröffentlichten Informationen sind sorgfältig zusammengestellt, erheben aber keinen Anspruch auf Aktualität, Vollständigkeit oder Richtigkeit. Es wird keine Haftung übernommen für Schäden, die  durch die Verwendung dieses Scripts oder der daraus gezogenen Informationen entstehen. Dies gilt ebenfalls für Inhalte Dritter, die über dieses Angebot zugänglich sind.
+
+### Datenbeschreibung 
+
+#### `cases_per_type.csv`
+
+| Attribut | Typ | Beschreibung |
+|-------|------|-----------------------------------------------------------------------------|
+| year | Numeric | Jahr der Beobachtung |
+| Fernmeldedienst | Numeric  | Anzahl Fälle der Fernmeldedienstanbieter |
+| Mehrwertdienst | Numeric | Anzahl Fälle der Mehrwertdienstanbieter |
+
+
+#### `cases_top_4_with_exit.csv`
+
+Exportiert werden nur die drei aus unserer Sicht wichtigsten Ausgänge. Andere bezieht sich sowohl auf Fernmeldedienstanbieter wie auch auf Mehrwertdienstanbieter, auch hier sind die Jahre 2014-18 abgebildet.
+
+| Attribut | Typ | Beschreibung |
+|-------|------|-----------------------------------------------------------------------------|
+| category | String | Ausgang des Falls in Worten |
+| Salt | Numeric | Anzahl Fälle 2014-2018 mit diesem Ausgang bei Salt |
+| Sunrise | Numeric | Anzahl Fälle 2014-2018 mit diesem Ausgang bei Sunrise |
+| Swisscom | Numeric | Anzahl Fälle 2014-2018 mit diesem Ausgang bei Swisscom |
+| UPC | Numeric | Anzahl Fälle 2014-2018 mit diesem Ausgang bei UPC |
+| Andere | Numeric | Anzahl Fälle 2014-2018 mit diesem Ausgang bei allen anderen Providern |
+
+
+#### `reasons_top_four_providers.csv`
+
+Diese Zahlen beziehen sich nur auf die Fälle der 4 grössten Provider Salt, Sunrise, Swisscom und UPC, auch hier sind die Jahre 2014-18 abgebildet.
+
+| Attribut | Typ | Beschreibung |
+|-------|------|-----------------------------------------------------------------------------|
+| category | String | Beschwerdegrund |
+| value | Numeric | Anzahl Fälle 2014-2018 mit diesem Beschwerdegrund |
+
+
+### Originalquelle
+
+Originalquelle der Auswertungen sind Daten, die SRF im Rahmen des Öffentlichkeitsprinzips von der Ombudscom herausverlangt hat. Die betreffenden Excel-Dateien, die SRF zugeschickt worden waren, finden sich im Ordner `input/data`.
+
+Lesen Sie mehr über das Verfahren eines Ombudscom-Falls auf der [betreffenden Website](https://de.ombudscom.ch/ablauf-des-schlichtungsverfahrens/) oder im letzten Bericht (2018). Wichtig ist uns die Unterscheidung zwischen einer Anfrage und einem Fall. Es wird wie folgt beschrieben: "Eine Anfrage wird statistisch erfasst, wenn sich eine Person schriftlich oder telefonisch an die Schlichtungsstelle wendet und die Voraussetzungen für eine Einleitung des Schlichtungsverfahrens gemäss Art. 8 Prozess- und Gebührenreglement noch nicht erfüllt sind."
+
+Das bedeutet, dass sich diese Analyse hauptsächlich auf die Fälle und nicht auf die Anfragen konzentriert. So wurden beispielsweise im Jahr 2018 die folgenden Untergruppen von Anfragen protokolliert: 
+
+* 564 abgeschlossen, weil sie zu einem Fall wurden
+* 872 Abschluss infolge nicht eingereichter Dokumente
+* 238 Rückzug der Anfrage
+* 101 Unzuständigkeit
+* 1344 telefonische Anfragen betreffend Informationen/Ratschläge
+* 184 schriftliche Anfragen betreffend Informationen/Ratschläge
+
+Wie im [Jahresbericht 2018 auf Seite 9](https://ombudscom.net/downloads/index.php/s/WnAB3Gs7boAC2eH#pdfviewer) angegeben. Im Erklärungstext ist zu verstehen, dass die Anfragen allein vielleicht keine sehr zuverlässige Informationsquelle sind: "872 abgeschlossene Anfragen sind auf nicht eingereichte Dokumente zurückzuführen. Diese machten knapp 26% aller Anfragen aus. Gegenüber dem Vorjahr stieg dieser Wert leicht. Oft sind den Kundinnen und Kunden die Hürden zur Durchführung eines Schlichtungsverfahrens zu hoch. Bereits das Ausfüllen eines speziell für das Schlichtungsverfahren vorgesehenen Formulars bereitete einigen Personen Mühe. Oftmals gingen sie fälschlicherweise auch davon aus, dass der Ombudsmann ihre Interessen gegenüber den Anbietern vertritt oder die streitige Angelegenheit umgehend (z.B. mit einem Telefonat mit dem betroffenen Anbieter) lösen kann. Auch wurden sie von auf die Schlichtungsstelle verweisenden Stellen falsch über die Funktion und die Aufgaben der Schlichtungsstelle informiert. Die Mitarbeitenden der Schlichtungsstelle klärten die Kundinnen und Kunden über die Tätigkeit auf und informierten sie über die Eintretensvoraussetzungen: Bevor ein Schlichtungsverfahren eingeleitet werden kann, muss die begehrende Partei das Formular „Schlichtungsbegehren“ unter Angabe des Sachverhalts und Ziels ausfüllen sowie glaubhaft darlegen, dass sie sich innerhalb der letzten 12 Monate erfolglos um eine Lösung des Problems bemüht hatte. Ging aus der Anfrage nicht hervor, dass die Kundin oder der Kunde bereits eine Lösung mit dem Anbieter angestrebt hatte, empfahl die Schlichtungsstelle, sich schriftlich mit einer Beschwerde an den betroffenen Anbieter zu wenden. Dieser Aufwand war vielen Kundinnen und Kunden zu gross. Sie gingen – wie bereits erwähnt – davon aus, dass die Schlichtungsstelle ihre Interessen vertreten könne und sie in der Angelegenheit nichts weiter unternehmen müssen. Daher strebten sie kein Schlichtungsverfahren an und die Anfragen wurden infolge nicht eingereichter Dokumente abgeschlossen."
+
+
+## Vorbereitungen
+
+```{r, echo=FALSE}
+detach_all_packages <- function() {
+  basic_packages_blank <-  c("stats",
+                             "graphics",
+                             "grDevices",
+                             "utils",
+                             "datasets",
+                             "methods",
+                             "base")
+  basic_packages <- paste("package:", basic_packages_blank, sep = "")
+
+  package_list <- search()[
+    ifelse(unlist(gregexpr("package:", search())) == 1, TRUE, FALSE)]
+
+  package_list <- setdiff(package_list, basic_packages)
+
+  if (length(package_list) > 0)  for (package in package_list) {
+    detach(package, character.only = TRUE, unload = TRUE)
+    print(paste("package ", package, " detached", sep = ""))
+  }
+}
+
+detach_all_packages()
+
+# this allows multiple persons to use the same RMarkdown
+# without adjusting the working directory by themselves all the time
+source("scripts/csf.R")
+path_to_wd <- csf() # if this - for some reason - does not work,
+# replace with a hardcoded path, like so: "~/projects/rddj-template/analysis/"
+if ( is.null(path_to_wd) | !dir.exists(path_to_wd)) {
+  print("WARNING: No working directory specified for current user")
+} else {
+  setwd(path_to_wd)
+}
+
+# suppress scientific notation
+options(scipen = 999)
+
+# unload global rstudioapi and knitr again to avoid conflicts with checkpoint
+# this is only necessary if executed within RStudio
+# outside of RStudio, namely in the knit.sh script, this causes RMarkdown
+# rendering to fail, thus should not be executed there
+if (Sys.getenv("RSTUDIO") == "1"){
+  detach_all_packages()
+}
+```
+
+
+### Packages definieren
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# from https://mran.revolutionanalytics.com/web/packages/checkpoint/vignettes/using-checkpoint-with-knitr.html
+# if you don't need a package, remove it from here (commenting is probably not sufficient)
+# tidyverse: see https://blog.rstudio.org/2016/09/15/tidyverse-1-0-0/
+cat("
+library(rstudioapi)
+library(tidyverse) # ggplot2, dplyr, tidyr, readr, purrr, tibble
+library(glue) # string literals
+library(magrittr) # pipes
+library(readxl) # excel
+library(scales) # scales for ggplot2
+library(jsonlite) # json
+library(lintr) # code linting
+library(ggrepel) # repelling geom_text
+library(rmarkdown)",
+file = "manifest.R")
+```
+
+### Packages installieren
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# if checkpoint is not yet installed, install it (for people using this
+# system for the first time)
+if (!require(checkpoint)) {
+  if (!require(devtools)) {
+    install.packages("devtools", repos = "http://cran.us.r-project.org")
+    require(devtools)
+  }
+  devtools::install_github("RevolutionAnalytics/checkpoint",
+                           ref = "v0.3.2", # could be adapted later,
+                           # as of now (beginning of July 2017
+                           # this is the current release on CRAN)
+                           repos = "http://cran.us.r-project.org")
+  require(checkpoint)
+}
+# nolint start
+if (!dir.exists("~/.checkpoint")) {
+  dir.create("~/.checkpoint")
+}
+# nolint end
+# install packages for the specified CRAN snapshot date
+checkpoint(snapshotDate = package_date,
+           project = path_to_wd,
+           verbose = T,
+           scanForPackages = F,
+           use.knitr = F,
+           R.version = R_version)
+rm(package_date)
+```
+
+
+### Packages laden
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+source("manifest.R")
+unlink("manifest.R")
+sessionInfo()
+rm(list = ls(all = TRUE))
+```
+
+### Daten einlesen
+
+```{r read data, echo=TRUE, message=FALSE, warning=FALSE}
+
+# prepare multiple tibbles that will be filled with data
+status <- tibble() # Statistik
+reasons_cases_requests <- tibble() # Beschwerdegründe (Fälle und Anfragen)
+reasons_cases <- tibble() # Beschwerdegründe (nur Fälle)
+reasons_requests <- tibble() # Beschwerdegründe (nur Anfragen)
+languages <- tibble() # Sprache Beschwerdeführer
+appellant_types <- tibble() # Art Beschwerdeführer
+avg_sums <- tibble() # Durchschnittliche Streitsummen
+avg_durations <- tibble() # Durchschnittlichen Behandlungsdauer
+
+# the files have a consistent structure
+c("FDA", "MWDA") %>%
+  walk(function(current_type) {
+    list.files(
+      "input/data",
+      pattern = glue("^\\d{{4}}_{current_type}.xlsx$"),
+      full.names = TRUE
+    ) %>%
+      walk(function(current_file) {
+        # create helper function that gathers providers
+        # renames first column to category and appends info about year/file
+        add_info_and_gather <- function(df) {
+          df %>%
+            rename(category = 1) %>%
+            mutate(
+              year = as.numeric(str_extract(current_file, "\\d{4}")),
+              type = str_replace_all(current_type, c(
+                "FDA" = "Fernmeldedienst",
+                "MWDA" = "Mehrwertdienst"
+              ))
+            ) %>%
+            gather(
+              key = "provider",
+              value = "value",
+              -one_of("category", "year", "type", "file")
+            ) %>%
+            # convert to numeric, but first remove dots (thousands) and
+            # replace commas (decimal) with point
+            mutate(
+              value = str_replace_all(value, "\\.", ""),
+              value = str_replace_all(value, ",", "."),
+              value = as.numeric(value)
+            )
+        }
+
+        # read ranges and bind to prepared tibbles
+        suppressMessages({
+          status <<- status %>%
+            bind_rows(
+              read_excel(current_file, skip = 1, n_max = 37) %>%
+                add_info_and_gather()
+            )
+
+          reasons_cases_requests <<- reasons_cases_requests %>%
+            bind_rows(
+              read_excel(current_file, skip = 40, n_max = 22) %>%
+                add_info_and_gather()
+            )
+
+          reasons_cases <<- reasons_cases %>%
+            bind_rows(
+              read_excel(current_file, skip = 65, n_max = 22) %>%
+                add_info_and_gather()
+            )
+
+          reasons_requests <<- reasons_requests %>%
+            bind_rows(
+              read_excel(current_file, skip = 90, n_max = 22) %>%
+                add_info_and_gather()
+            )
+
+          languages <<- languages %>%
+            bind_rows(
+              read_excel(current_file, skip = 115, n_max = 4) %>%
+                add_info_and_gather()
+            )
+
+          appellant_types <<- appellant_types %>%
+            bind_rows(
+              read_excel(current_file, skip = 122, n_max = 3) %>%
+                add_info_and_gather()
+            )
+
+          avg_sums <<- avg_sums %>%
+            bind_rows(
+              read_excel(current_file, skip = 128, n_max = 2) %>%
+                add_info_and_gather()
+            )
+
+          avg_durations <<- avg_durations %>%
+            bind_rows(
+              read_excel(current_file, skip = 133, n_max = 8) %>%
+                add_info_and_gather()
+            )
+        })
+      })
+  })
+
+# In our tables we still have some totals. Not only in the column category
+# where it is the sum of all other categories, but also in the column provider
+# we remove all these, we can sum stuff on our own perfectly well.
+# Also convert category, type, provider to factor in all tibbles, don't be
+# confused by the syntax with walk / assign, it's really just a fancy way
+# to apply the same mutation to all variables named in the vector.
+c(
+  "status",
+  "reasons_cases_requests",
+  "reasons_cases",
+  "reasons_requests",
+  "languages",
+  "appellant_types",
+  "avg_sums",
+  "avg_durations"
+) %>%
+  walk(function(current_tibble) {
+    # create new variables with names …_totals
+    assign(
+      glue("{current_tibble}_totals"),
+      get(current_tibble) %>%
+        # now remove totals from original tables
+        filter(
+          str_detect(category, "^Total") |
+          str_detect(provider, "^Total")
+        ),
+      envir = .GlobalEnv
+    )
+    # apply mutation to all variables
+    assign(
+      current_tibble,
+      get(current_tibble) %>%
+        # now remove totals from original tables
+        filter(
+          !str_detect(category, "^Total") &
+          !str_detect(provider, "^Total")
+        ) %>%
+        mutate_at(
+          vars(category, type, provider),
+          factor
+        ),
+      envir = .GlobalEnv
+    )
+  })
+
+```
+
+## Auswertungen
+
+### Gesamtanzahl Fälle und Anfragen
+
+Die Tabelle `status` enthält zwei Gruppen: `Fälle` und `Anfragen abgeschlossen`. In der Spalte `category` sind auch die Unterkategorien aufgeführt, aber diese beiden sind geeignet, um sich die Summen pro Jahr anzusehen, z.B:
+
+```{r preprarations}
+top_four <- c("Salt Mobile SA", "Swisscom (Schweiz) AG",
+              "Sunrise Communications AG", "UPC Schweiz GmbH")
+
+```
+
+```{r total cases and requests, echo=TRUE, message=FALSE, warning=FALSE}
+
+status %>%
+  filter(category == "Fälle" | category == "Anfragen abgeschlossen") %>%
+  group_by(category, year) %>%
+  summarise(sum = sum(value)) %>%
+  spread(key = category, value = sum) %>%
+  mutate(Total = `Anfragen abgeschlossen` + `Fälle`) %>%
+  knitr::kable()
+
+```
+
+
+```{r chart total cases and requests, echo=TRUE, message=FALSE, warning=FALSE}
+
+status %>%
+  filter(category == "Fälle" | category == "Anfragen abgeschlossen") %>%
+  group_by(category, year, type) %>%
+  summarise(sum = sum(value)) %>%
+  ggplot(
+    aes(
+      x = year,
+      y = sum,
+      fill = type
+    )
+  ) +
+  geom_bar(stat = "identity") +
+  scale_fill_brewer(palette = "Set1", guide = FALSE) +
+  facet_grid(category ~ type, scales = "fixed") +
+  theme_minimal() +
+  labs(
+    title = "Anzahl Fälle und Anfragen pro Jahr",
+    x = NULL,
+    y = NULL,
+    fill = NULL
+  )
+
+# csv for graphic in article
+write_csv(
+  status %>%
+    filter(category == "Fälle") %>%
+    select(-category) %>%
+    group_by(year, type) %>%
+    summarise(sum = sum(value)) %>%
+    spread(type, sum),
+  path = "output/cases_per_type.csv"
+)
+
+```
+
+### Anzahl Provider
+
+Die Anzahl der Anbieter / Provider scheint über Jahre hinweg einheitlich zu sein.
+
+```{r distinct providers, echo=TRUE, message=FALSE, warning=FALSE}
+
+status %>%
+  distinct(type, provider, year) %>%
+  group_by(type, year) %>%
+  count() %>%
+  knitr::kable()
+
+```
+
+
+### Höchste Anzahl Fälle
+
+Nun identifizieren wir die "grossen Fische" über alle fünf Jahre hinweg, sortiert nach der Gesamtzahl der Fälle:
+
+
+```{r top 20 most cases, echo=TRUE, message=FALSE, warning=FALSE}
+
+top_20 <- status %>%
+  filter(category == "Fälle") %>%
+  group_by(provider, type, category) %>%
+  summarise(sum = sum(value)) %>%
+  ungroup() %>%
+  spread(key = category, value = sum) %>%
+  arrange(desc(`Fälle`)) %>%
+  top_n(20)
+
+top_20 %>%
+  knitr::kable()
+
+top_20 %<>%
+  pull(provider)
+
+# define a categorical color scale with looots of values
+categorical <- c(
+  "#e31f2b", "#f7a600", "#a8b51c",
+  "#61b13e", "#1cb373", "#1cb0b5",
+  "#1e8ce3", "#a359c0", "#ca51af",
+  "#9f9c90" # grey
+)
+
+```
+
+
+### Fälle nach Provider und Jahr
+
+```{r cases by provider and year, echo=TRUE, message=FALSE, warning=FALSE}
+
+top_10 <- top_20[1:10]
+
+status %>%
+  filter(
+    provider %in% top_10 &
+    category == "Fälle"
+  ) %>%
+  ggplot(
+    aes(
+      x = year,
+      y = value,
+      group = provider,
+      color = provider
+    )
+  ) +
+  geom_line() +
+  geom_text_repel(
+    data = status %>%
+      filter(
+        provider %in% top_10 &
+        year == max(year) &
+        category == "Fälle"
+      ),
+    mapping = aes(
+      label = provider
+    ),
+    segment.colour = "#DDDDDD",
+    direction = "y",
+    nudge_x = 0.5,
+    hjust = 0
+  ) +
+  scale_color_manual(values = categorical) +
+  scale_x_continuous(
+    breaks = seq(min(status$year), max(status$year)),
+    limits = c(NA, max(avg_sums$year) + 3)
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(
+    title = "Anzahl Fälle der 10 Provider mit den meisten Fällen",
+    x = NULL,
+    y = NULL
+  )
+
+```
+
+
+### Durchschn. Streitsummen
+
+Unter den Top-10-Anbietern mit den meisten Fällen analysieren wir auch die durchschnittliche Streitsumme pro Fall und Jahr:
+
+```{r average case volume, echo=TRUE, message=FALSE, warning=FALSE}
+
+avg_sums %>%
+  filter(
+    provider %in% top_10 &
+    category == "Streitsumme CHF"
+  ) %>%
+  ggplot(
+    aes(
+      x = year,
+      y = value,
+      group = provider,
+      color = provider
+    )
+  ) +
+  geom_line() +
+  geom_text_repel(
+    data = avg_sums %>%
+      filter(
+        provider %in% top_10 &
+        category == "Streitsumme CHF" &
+        year == max(year)
+      ),
+    mapping = aes(
+      label = provider
+    ),
+    segment.colour = "#DDDDDD",
+    direction = "y",
+    nudge_x = 0.5,
+    hjust = 0
+  ) +
+  scale_y_log10(labels = dollar_format(prefix = "CHF")) +
+  scale_x_continuous(
+    breaks = seq(min(status$year), max(status$year)),
+    limits = c(NA, max(avg_sums$year) + 3)
+  ) +
+  scale_color_manual(values = categorical) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(
+    title =
+      "Durchschnittliche Streitsumme der 10 Provider mit den meisten Fällen",
+    subtitle = "Hinweis: Die y-Achse ist logarithmisch",
+    x = NULL,
+    y = NULL
+  )
+
+```
+
+Die Durchschnittssumme pro Fall der Top-10-Anbieter liegt in der Regel zwischen 100 und 500 Schweizer Franken, mit Ausnahme der UPC Schweiz GmbH im Jahr 2014, wo sie CHF 2'397 betrug.
+
+### Ausgang Fälle
+
+Aufschlüsselung nach Rückzug, Schlichtung und Nicht-Schlichtung über alle Jahre und Top-10-Anbieter:
+
+```{r results cases, fig.width = 15, fig.height = 8, echo=TRUE, message=FALSE, warning=FALSE}
+
+relevant_status <- c(
+  "Schlichtung zustande gekommen",
+  "Rückzug Kunde nach Einleitung",
+  "Schlichtung nicht zustande gekommen"
+)
+
+status %>%
+  filter(
+    category %in% relevant_status &
+    provider %in% top_10
+  ) %>%
+  mutate(provider = factor(provider, levels = top_10)) %>%
+  ggplot(aes(
+    x = year,
+    y = value,
+    fill = category
+  )) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ provider) +
+  scale_fill_manual(values = c("#9d9d9d", "#e31f2b", "#61b13e")) +
+  theme_minimal() +
+  labs(
+    title = "Fälle und deren Ausgang nach Provider, Jahr und Kategorie",
+    subtitle = "Top 10 der Provider mit den meisten Fällen 2014-2018",
+    x = NULL,
+    y = NULL,
+    fill = NULL
+  )
+
+# table for "top four"
+status %>%
+  filter(
+    category %in% relevant_status &
+    provider %in% top_four
+  ) %>%
+  group_by(provider, year) %>%
+  summarize(sum = sum(value)) %>%
+  knitr::kable()
+
+# csv for graphic in article
+write_csv(
+  status %>%
+    filter(
+      category %in% relevant_status
+    ) %>%
+    mutate(provider = if_else(
+      provider %in% top_four,
+      as.character(provider),
+      "Andere"
+    )) %>%
+    group_by(provider, category) %>%
+    summarise(value = sum(value)) %>%
+    spread(provider, value) %>%
+    select(
+      category,
+      `Salt` = `Salt Mobile SA`,
+      `Sunrise` = `Sunrise Communications AG`,
+      `Swisscom` = `Swisscom (Schweiz) AG`,
+      `UPC` = `UPC Schweiz GmbH`,
+      Andere
+    ) %>%
+    mutate(category = factor(category, levels = c(
+      "Schlichtung nicht zustande gekommen",
+      "Schlichtung zustande gekommen",
+      "Rückzug Kunde nach Einleitung"
+    ))) %>%
+    arrange(category),
+  path = "output/cases_top_4_with_exit.csv"
+)
+
+```
+
+#### Genauere Aufschlüsselung
+
+Nachfolgend werden die Daten aller Jahre zusammengefasst, die Rückzüge entfernt und die Einigungen / Ablehnungen genauer aufgeschlüsselt.
+
+```{r results cases detailed and aggregated, fig.width = 15, fig.height = 8, echo=TRUE, message=FALSE, warning=FALSE}
+
+relevant_status <- c(
+  "Einigung zugunsten Kunde",
+  "Einigung zugunsten Provider",
+  "Einigung Kunde und Provider",
+  "Ablehnung Kunde",
+  "Ablehnung Provider",
+  "Ablehnung Kunde und Provider",
+  "Unzuständigkeit nach Einleitung",
+  "Rückzug Kunde nach Einleitung"
+)
+status_aggregated <- status %>%
+  filter(
+    category %in% relevant_status &
+    provider %in% top_10
+  ) %>%
+  mutate(provider = factor(provider, levels = top_10)) %>%
+  mutate(category = factor(category, levels = relevant_status)) %>%
+  group_by(provider, category) %>%
+  summarize(total_category = sum(value)) %>%
+  ungroup()
+
+status_aggregated %>%
+  ggplot(aes(
+    x = provider,
+    y = total_category,
+    fill = category
+  )) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#579d39", "#72bd51", "#b3df9f",
+                               "#c91024", "#f1434a", "#ff9193", "#ffe6e6",
+                               "#9d9d9d")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1.2)) +
+  labs(
+    title = "Fälle und deren Ausgang nach Provider, 2014-2018",
+    subtitle = "Top 10 der Provider mit den meisten Fällen 2014-2018",
+    x = NULL,
+    y = NULL,
+    fill = NULL
+  )
+
+# table for "top four"
+status_aggregated %>%
+  filter(provider %in% top_four) %>%
+  knitr::kable()
+```
+
+
+##### Rückzugsquote
+
+```{r withdrawals}
+status_aggregated %>%
+  group_by(provider) %>%
+  mutate(share = round(total_category / sum(total_category), 2)) %>%
+  filter(str_detect(category, "Rückzug")) %>%
+  select(provider, share) %>%
+  arrange(desc(share)) %>%
+  knitr::kable()
+```
+
+##### Grafik ohne Rückzüge
+
+```{r results cases detailed and aggregated without withdrawals, fig.width = 15, fig.height = 8, echo=TRUE, message=FALSE, warning=FALSE}
+
+relevant_status <- c(
+  "Einigung zugunsten Kunde",
+  "Einigung zugunsten Provider",
+  "Einigung Kunde und Provider",
+  "Ablehnung Kunde",
+  "Ablehnung Provider",
+  "Ablehnung Kunde und Provider",
+  "Unzuständigkeit nach Einleitung"
+)
+status_aggregated <- status %>%
+  filter(
+    category %in% relevant_status &
+    provider %in% top_10
+  ) %>%
+  mutate(provider = factor(provider, levels = top_10)) %>%
+  mutate(category = factor(category, levels = relevant_status)) %>%
+  group_by(provider, category) %>%
+  summarize(total_category = sum(value)) %>%
+  ungroup()
+
+status_aggregated %>%
+  ggplot(aes(
+    x = provider,
+    y = total_category,
+    fill = category
+  )) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#579d39", "#72bd51", "#b3df9f",
+                               "#c91024", "#f1434a", "#ff9193", "#ffe6e6",
+                               "#9d9d9d")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1.2)) +
+  labs(
+    title = "Fälle und deren Ausgang nach Provider, 2014-2018",
+    subtitle = "Top 10 der Provider mit den meisten Fällen 2014-2018",
+    x = NULL,
+    y = NULL,
+    fill = NULL
+  )
+```
+
+##### Einigungsquote ("Schlichtung zustande gekommen", ohne Rückzüge)
+
+```{r positives}
+status_aggregated %>%
+  filter(!str_detect(category, "Rückzug")) %>%
+  mutate(agg = word(category, 1)) %>%
+  group_by(provider, agg) %>%
+  summarize(total_category = sum(total_category)) %>%
+  mutate(share = round(total_category / sum(total_category), 2)) %>%
+  filter(str_detect(agg, "Einigung")) %>%
+  select(provider, share) %>%
+  arrange(desc(share)) %>%
+  knitr::kable()
+```
+
+
+### Beschwerdegründe (Fälle)
+
+```{r reasons, fig.width = 15, fig.height = 8, echo=TRUE, message=FALSE, warning=FALSE}
+
+# get top n reasons
+top_n_reasons <- reasons_cases %>%
+  group_by(category) %>%
+  summarize(total_category = sum(value)) %>%
+  arrange(desc(total_category)) %>%
+  top_n(9) %>%
+  pull(category)
+
+reasons_cases %>%
+  filter(
+    provider %in% top_10
+  ) %>%
+  # keep top 10 categories and summarize rest
+  mutate(category = case_when(
+    category %in% top_n_reasons ~ as.character(category),
+    TRUE ~ "Sonstige"
+  )) %>%
+  mutate(provider = factor(provider, levels = top_10)) %>%
+  mutate(category = factor(category, levels =
+                             c(as.character(top_n_reasons), "Sonstige"))) %>%
+  group_by(provider, category) %>%
+  summarize(total_category = sum(value)) %>%
+  ungroup() %>%
+  ggplot(aes(
+    x = provider,
+    y = total_category,
+    fill = category
+  )) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = categorical) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1.2)) +
+  labs(
+    title = "Beschwerdegründe (Fälle) nach Provider, 2014-2018",
+    subtitle = "Top 10 der Provider mit den meisten Fällen 2014-2018",
+    x = NULL,
+    y = NULL,
+    fill = NULL
+  )
+
+# table for "top four"
+reasons_cases %>%
+  filter(provider %in% top_four) %>% # keep top 10 categories and summarize rest
+  mutate(category = case_when(
+    category %in% top_n_reasons ~ as.character(category),
+    TRUE ~ "Sonstige"
+  )) %>%
+  group_by(provider, category) %>%
+  summarize(sum = sum(value)) %>%
+  ungroup() %>%
+  group_by(provider) %>%
+  arrange(provider, desc(sum)) %>%
+  knitr::kable()
+
+# csv for graphic in article
+write_csv(
+  reasons_cases %>%
+    filter(provider %in% top_four) %>%
+    group_by(category) %>%
+    summarise(value = sum(value)) %>%
+    arrange(desc(value)),
+  path = "output/reasons_top_four_providers.csv"
+)
+
+```
+
+#### Tabelle Beschwerdegründe
+
+```{r, fig.width = 15, fig.height = 8, echo=TRUE, message=FALSE, warning=FALSE}
+
+reasons_cases %>%
+  # keep top 10 categories and summarize rest
+  mutate(category = case_when(
+    category %in% top_n_reasons ~ as.character(category),
+    TRUE ~ "Sonstige"
+  )) %>%
+  mutate(category = factor(category, levels =
+                             c(as.character(top_n_reasons), "Sonstige"))) %>%
+  group_by(category) %>%
+  summarize(total = sum(value)) %>%
+  knitr::kable()
+```
+
+## Linting
+
+Der Code in diesem RMarkdown wird mit [lintr](https://github.com/jimhester/lintr) automatisch auf den Wickham'schen [tidyverse style guide](http://style.tidyverse.org/) überprüft.  
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+lintr::lint("main.Rmd", linters =
+  lintr::with_defaults(
+    object_length_linter = object_length_linter(45)
+  )
+)
+```
